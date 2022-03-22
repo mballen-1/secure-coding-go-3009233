@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -19,6 +20,7 @@ var (
 	<body>
 </html>
 `
+	loginHTMLTemplate = template.Must(template.New("login").Parse(loginHTML))
 
 	statusHTML = `<!DOCTYPE html>
 <html>
@@ -28,21 +30,25 @@ var (
 	</body>
 </html>
 `
+
+	statusHTMLTemplate = template.Must(template.New("status").Parse(statusHTML))
 )
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	if r.Method != http.MethodPost {
-		fmt.Fprint(w, loginHTML)
+		fmt.Fprint(w, loginHTMLTemplate)
 		return
 	}
 
 	user, passwd := r.FormValue("user"), r.FormValue("passwd")
 	if !authUser(user, passwd) {
 		http.Error(w, fmt.Sprintf("%s:%s - bad login", user, passwd), http.StatusUnauthorized)
+		return
 	}
 
-	fmt.Fprintf(w, statusHTML, getStatus())
+	statusHTMLTemplate.Execute(w, statusHTML)
+	fmt.Fprintf(w, "end")
 }
 
 func main() {
